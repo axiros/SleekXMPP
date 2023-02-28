@@ -1,6 +1,10 @@
 SleekXMPP
 #########
 
+⚠️ Warning
+------------
+This fork is just so that some very basic selective use cases for XMPP work in python 3.11. Under no circumstances, this is meant to provide all the use cases of the original package in earlier versions of python.
+
 ⚠️ Deprecated
 ------------
 SleekXMPP is deprecated in favor of Slixmpp, a fork which takes full advantage of Python 3 and asyncio.
