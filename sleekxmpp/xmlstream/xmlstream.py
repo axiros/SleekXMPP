@@ -480,7 +480,7 @@ class XMLStream(object):
                 else:
                     # Or, set the version to TLSv1 (later is not supported),
                     # and set a list of good ciphers.
-                    ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+                    ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
                     ctx.set_ciphers(_CIPHERS_TLS)
                 # And in both case, CRIME attack needs to be prevented.
                 if sys.version_info >= (3, 3):
@@ -511,7 +511,7 @@ class XMLStream(object):
             if self.ssl_version == ssl.PROTOCOL_SSLv3:
                 ssl_args['ssl_version'] = ssl.PROTOCOL_SSLv3
             else:
-                ssl_args['ssl_version'] = ssl.PROTOCOL_TLSv1
+                ssl_args['ssl_version'] = ssl.PROTOCOL_TLSv1_2
             ctx = None
 
         if ctx:
