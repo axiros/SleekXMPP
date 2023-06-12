@@ -548,7 +548,8 @@ class XMLStream(object):
             self.address = (host, int(port))
         try:
             Socket.inet_aton(self.address[0])
-        except (Socket.error, ssl.SSLError):
+            # python 2.7 raises Socket.error python 3.X raises OSError
+        except (Socket.error, ssl.SSLError, OSError):
             self.default_domain = self.address[0]
 
         # Respect previous SSL and TLS usage directives.
@@ -605,10 +606,22 @@ class XMLStream(object):
                 self._service_name = host
             except StopIteration:
                 log.debug("No remaining DNS records to try.")
-                self.dns_answers = None
-                if reattempt:
-                    self.reconnect_delay = delay
-                return False
+                # in case the FQDN is not resolvable via the DNS servers, dnspython
+                # will not even consider /etc/hosts as stated on their page
+                # https://github.com/rthalley/dnspython
+                # Thus we have to use socket gethostbyname as a last chance to resolve
+                # the FQDN in /etc/hosts
+                try:
+                    self.address = (
+                        Socket.gethostbyname(self.default_domain), self.address[1]
+                    )
+                    self._service_name = self.default_domain
+                except Exception:
+                    log.debug("Lookup by socket.gethostbyname also found no matches")
+                    self.dns_answers = None
+                    if reattempt:
+                        self.reconnect_delay = delay
+                    return False
 
         af = Socket.AF_INET
         proto = 'IPv4'
