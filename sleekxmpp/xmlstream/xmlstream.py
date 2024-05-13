@@ -130,7 +130,7 @@ class XMLStream(object):
         #:
         #:         import ssl
         #:         xmpp.ssl_version = ssl.PROTOCOL_SSLv3
-        self.ssl_version = ssl.PROTOCOL_SSLv23
+        self.ssl_version = ssl.PROTOCOL_TLSv1_2
 
         #: The list of accepted ciphers, in OpenSSL Format.
         #: It might be useful to override it for improved security
@@ -459,7 +459,7 @@ class XMLStream(object):
                 # Good, create_default_context() is supported, which consists
                 # recommended security settings by default.
                 ctx = ssl.create_default_context()
-                if self.ssl_version == ssl.PROTOCOL_SSLv3:
+                if hasattr(ssl, "PROTOCOL_SSLv3") and self.ssl_version == ssl.PROTOCOL_SSLv3:
                     # But if the user specifies insecure SSLv3, do a favor.
                     ctx.options &= ~ssl.OP_NO_SSLv3  # UNSET NO_SSLv3, or set SSLv3
                     ctx.set_ciphers(_CIPHERS_SSL)  # _CIPHERS_SSL is weaker
@@ -473,7 +473,7 @@ class XMLStream(object):
                     ctx.load_verify_locations(cafile=self.ca_certs)
             else:
                 # Oops, create_default_context() is not supported.
-                if self.ssl_version == ssl.PROTOCOL_SSLv3:
+                if hasattr(ssl, "PROTOCOL_SSLv3") and self.ssl_version == ssl.PROTOCOL_SSLv3:
                     # First, if the user specifies insecure SSLv3, do a favor.
                     ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv3)
                     ctx.set_ciphers(_CIPHERS_SSL)
@@ -497,7 +497,7 @@ class XMLStream(object):
         elif sys.version_info >= (2, 7, 9):
             # Good, create_default_context() is supported, do the same as Python 3.4.
             ctx = ssl.create_default_context()
-            if self.ssl_version == ssl.PROTOCOL_SSLv3:
+            if hasattr(ssl, "PROTOCOL_SSLv3") and self.ssl_version == ssl.PROTOCOL_SSLv3:
                 # If the user specifies insecure SSLv3, do a favor.
                 ctx.options &= ~ssl.OP_NO_SSLv3
                 ctx.set_ciphers(_CIPHERS_SSL)
@@ -508,7 +508,7 @@ class XMLStream(object):
             elif cert_policy == ssl.CERT_REQUIRED:
                 ctx.load_verify_locations(cafile=self.ca_certs)
         else:
-            if self.ssl_version == ssl.PROTOCOL_SSLv3:
+            if hasattr(ssl, "PROTOCOL_SSLv3") and self.ssl_version == ssl.PROTOCOL_SSLv3:
                 ssl_args['ssl_version'] = ssl.PROTOCOL_SSLv3
             else:
                 ssl_args['ssl_version'] = ssl.PROTOCOL_TLSv1_2
@@ -517,11 +517,13 @@ class XMLStream(object):
         if ctx:
             if self.ciphers:
                 ctx.set_ciphers(self.ciphers)
-            return ctx.wrap_socket(self.socket, do_handshake_on_connect=False)
+            self.socket = ctx.wrap_socket(self.socket, do_handshake_on_connect=False)
+            return self.socket
         else:
             if self.ciphers and sys.version_info >= (2, 7):
                 ssl_args['ciphers'] = self.ciphers
-            return ssl.wrap_socket(self.socket, **ssl_args)
+            self.socket = ssl.wrap_socket(self.socket, **ssl_args)
+            return self.socket
 
     def connect(self, host='', port=0, use_ssl=False,
                 use_tls=True, reattempt=True):
