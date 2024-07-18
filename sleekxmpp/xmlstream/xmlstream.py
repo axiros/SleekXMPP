@@ -459,6 +459,7 @@ class XMLStream(object):
                 # Good, create_default_context() is supported, which consists
                 # recommended security settings by default.
                 ctx = ssl.create_default_context()
+                ctx.load_cert_chain(certfile=self.certfile, keyfile=self.keyfile)
                 if hasattr(ssl, "PROTOCOL_SSLv3") and self.ssl_version == ssl.PROTOCOL_SSLv3:
                     # But if the user specifies insecure SSLv3, do a favor.
                     ctx.options &= ~ssl.OP_NO_SSLv3  # UNSET NO_SSLv3, or set SSLv3
@@ -517,6 +518,7 @@ class XMLStream(object):
         if ctx:
             if self.ciphers:
                 ctx.set_ciphers(self.ciphers)
+            ctx.check_hostname = False
             self.socket = ctx.wrap_socket(self.socket, do_handshake_on_connect=False)
             return self.socket
         else:
